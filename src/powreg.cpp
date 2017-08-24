@@ -99,6 +99,12 @@ NumericVector rltgamma(NumericVector c, NumericVector d, NumericVector t) {
       M[i] = pow((a[i] - 1.0)/(1.0 - cons[i]), a[i] - 1.0)*exp(1.0 - a[i]);
     }
     z[i] = t[i]*z[i]/b[i];
+    if (NumericVector::is_na(z[i])) {
+      z[i] = R::rgamma(c[i], 1.0/d[i]); 
+      while (z[i] < t[i]) {
+        z[i] = R::rgamma(c[i], 1.0/d[i]);
+      }
+    }
   }
   
   return z;
