@@ -10,6 +10,14 @@
 
 using namespace Rcpp;
 
+// Scraped from here to get a way to set seed:
+// http://thecoatlessprofessor.com/programming/set_rs_seed_in_rcpp_sequential_case/
+void set_seed(unsigned int seed) {
+  Rcpp::Environment base_env("package:base");
+  Rcpp::Function set_seed_r = base_env["set.seed"];
+  set_seed_r(seed);  
+}
+
 // Implements this code to sample from a truncated univariate normal distribution
 // very reliably!
 // https://arxiv.org/pdf/0907.4010.pdf
@@ -205,7 +213,9 @@ NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
 // [[Rcpp::export]]
 List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVector &d,
              const NumericMatrix &W, double sigsq, double tausq, double q, 
-             const int &samples, NumericVector start) {
+             const int &samples, NumericVector start, int seed) {
+  
+  set_seed();
   
   int p = DUty.size();
   
