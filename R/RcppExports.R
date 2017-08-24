@@ -29,7 +29,7 @@ sampleGamma <- function(beta, tausq, q) {
     .Call('_powreg_sampleGamma', PACKAGE = 'powreg', beta, tausq, q)
 }
 
-sampler <- function(DUty, Vt, d, W, sigsq, tausq, q, samples, start) {
-    .Call('_powreg_sampler', PACKAGE = 'powreg', DUty, Vt, d, W, sigsq, tausq, q, samples, start)
+sampler <- function(DUty, Vt, d, W, sigsq, tausq, q, samples, start, seed) {
+    .Call('_powreg_sampler', PACKAGE = 'powreg', DUty, Vt, d, W, sigsq, tausq, q, samples, start, seed)
 }
 
