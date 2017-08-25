@@ -186,6 +186,7 @@ arma::colvec sampleBeta(NumericVector start, NumericVector DUty,
     lowlim = arma::max(ratio.elem(find(left < 0.0)));
     
     mm = DUtyAR.row(i)/(dAR.row(i)*dAR.row(i));
+    
     ss = sigsq/((dAR.row(i)*dAR.row(i)));
     
     if (dAR.row(i)[0] > 0) {
