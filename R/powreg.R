@@ -7,7 +7,11 @@ powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000) {
   U <- svd.X$u
   Vt <- t(svd.X$v)
   d <- c(svd.X$d, rep(0, nrow(Vt) - length(svd.X$d)))
-  D <- cbind(diag(svd.X$d), matrix(0, ncol = (nrow(Vt) - length(svd.X$d)), nrow = n))
+  if (nrow(Vt) > length(svd.X$d)) {
+    D <- cbind(diag(svd.X$d), matrix(0, ncol = (nrow(Vt) - length(svd.X$d)), nrow = n))
+  } else {
+    D <- diag(svd.X$d)
+  }
   
   DUty <- crossprod(crossprod(t(U), D), y)
   W <- crossprod(t(rbind(diag(rep(1, p)), diag(rep(-1, p)))), t(Vt))
