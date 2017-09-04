@@ -213,7 +213,7 @@ NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
   NumericVector shape(p, 1.0 + 1.0/q);
   NumericVector rate(p, pow(2.0, -q/2.0));
   
-  NumericVector gamma = rltgamma(shape, rate, eta);
+  NumericVector gamma = rltgammaLazy(shape, rate, eta);
   
   return gamma;
 }
@@ -229,6 +229,7 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
   
   NumericMatrix resBeta(samples, p);
   NumericMatrix resGamma(samples, p);
+  NumericMatrix resVar(samples, 2);
   NumericVector b = start;
   NumericVector g(p, 0.0);
   NumericVector delta(p, 0.0);
@@ -244,10 +245,13 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
     // Rcout << "b: " << b << "\n";
     resBeta(i,_) = b;
     resGamma(i,_) = g;
+    resVar(i,0) = tausq;
+    resVar(i,1) = sigsq;
   }
   
   
   return(Rcpp::List::create(Rcpp::Named("beta")=resBeta,
-                            Rcpp::Named("gamma")=resGamma));
+                            Rcpp::Named("gamma")=resGamma,
+                            Rcpp::Named("var")=resVar));
   
 }
