@@ -211,7 +211,7 @@ NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
   NumericVector eta = pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*abs(beta), q);
   // Rcout << "eta: " << eta << "\n";
   NumericVector shape(p, 1.0 + 1.0/q);
-  NumericVector rate(p, pow(2.0, -q/2.0));
+  NumericVector rate(p, pow(2.0, q/2.0));
   
   NumericVector gamma = rltgammaLazy(shape, rate, eta);
   
