@@ -27,7 +27,7 @@ void set_seed(unsigned int seed) {
 // http://www.stat.ncsu.edu/information/library/papers/mimeo2649_Li.pdf
 //
 // [[Rcpp::export]]
-NumericVector rtnorm(NumericVector mu, NumericVector sd, NumericVector l, NumericVector r) {
+NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, NumericVector r) {
   
   int p = mu.size();
   NumericVector lstd = (l - mu)/sd;
@@ -70,10 +70,6 @@ NumericVector rtnorm(NumericVector mu, NumericVector sd, NumericVector l, Numeri
   }
   return z;
 }
-
-// Use Dagpunar (1978) algorithm cited here: 
-// https://link-springer-com.offcampus.lib.washington.edu/content/pdf/10.1023%2FA%3A1018534102043.pdf
-// For a > 1
 
 // [[Rcpp::export]]
 NumericVector rshiftexp(NumericVector d, NumericVector t) {
@@ -151,7 +147,7 @@ arma::colvec sampleBeta(NumericVector start, NumericVector DUty,
     ss = sigsq/((dAR.row(i)*dAR.row(i)));
     
     if (dAR.row(i)[0] > 0) {
-      z.row(i) = rtnorm(mm, sqrt(ss), lowlim, upplim)[0];
+      z.row(i) = rtnormrej(mm, sqrt(ss), lowlim, upplim)[0];
       // Rcout << z.row(i) << " " << mm << " " << ss << " " << lowlim << " " << upplim << "\n";
     } else if (dAR.row(i)[0] == 0) {
       z.row(i) = R::runif(lowlim[0], upplim[0]);

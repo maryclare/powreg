@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-// rtnorm
-NumericVector rtnorm(NumericVector mu, NumericVector sd, NumericVector l, NumericVector r);
-RcppExport SEXP _powreg_rtnorm(SEXP muSEXP, SEXP sdSEXP, SEXP lSEXP, SEXP rSEXP) {
+// rtnormrej
+NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, NumericVector r);
+RcppExport SEXP _powreg_rtnormrej(SEXP muSEXP, SEXP sdSEXP, SEXP lSEXP, SEXP rSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -16,33 +16,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type sd(sdSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type l(lSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type r(rSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtnorm(mu, sd, l, r));
+    rcpp_result_gen = Rcpp::wrap(rtnormrej(mu, sd, l, r));
     return rcpp_result_gen;
 END_RCPP
 }
-// rltgamma
-NumericVector rltgamma(NumericVector c, NumericVector d, NumericVector t);
-RcppExport SEXP _powreg_rltgamma(SEXP cSEXP, SEXP dSEXP, SEXP tSEXP) {
+// rshiftexp
+NumericVector rshiftexp(NumericVector d, NumericVector t);
+RcppExport SEXP _powreg_rshiftexp(SEXP dSEXP, SEXP tSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type c(cSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type t(tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rltgamma(c, d, t));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rltgammaLazy
-NumericVector rltgammaLazy(NumericVector c, NumericVector d, NumericVector t);
-RcppExport SEXP _powreg_rltgammaLazy(SEXP cSEXP, SEXP dSEXP, SEXP tSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type c(cSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type t(tSEXP);
-    rcpp_result_gen = Rcpp::wrap(rltgammaLazy(c, d, t));
+    rcpp_result_gen = Rcpp::wrap(rshiftexp(d, t));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -122,9 +108,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_powreg_rtnorm", (DL_FUNC) &_powreg_rtnorm, 4},
-    {"_powreg_rltgamma", (DL_FUNC) &_powreg_rltgamma, 3},
-    {"_powreg_rltgammaLazy", (DL_FUNC) &_powreg_rltgammaLazy, 3},
+    {"_powreg_rtnormrej", (DL_FUNC) &_powreg_rtnormrej, 4},
+    {"_powreg_rshiftexp", (DL_FUNC) &_powreg_rshiftexp, 2},
     {"_powreg_remcol", (DL_FUNC) &_powreg_remcol, 2},
     {"_powreg_remrow", (DL_FUNC) &_powreg_remrow, 2},
     {"_powreg_sampleBeta", (DL_FUNC) &_powreg_sampleBeta, 7},
