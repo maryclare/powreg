@@ -76,53 +76,14 @@ NumericVector rtnorm(NumericVector mu, NumericVector sd, NumericVector l, Numeri
 // For a > 1
 
 // [[Rcpp::export]]
-NumericVector rltgamma(NumericVector c, NumericVector d, NumericVector t) {
+NumericVector rshiftexp(NumericVector d, NumericVector t) {
   
-  int p = c.size();
-  
-  NumericVector u(p, 1.0);
-  NumericVector rho(p, 0.0);
-  NumericVector z(p, 0.0);
-  NumericVector alpha(p, 0.0);
-  NumericVector cons(p, 0.0);
-  NumericVector M(p, 1.0);
-  
-  NumericVector a = c;
-  NumericVector b = t*d;
-  
-  for (int i = 0; i < p; i++) {
-    while (u[i] > rho[i]/M[i]) {
-      cons[i] = (b[i] - a[i] + sqrt((b[i] - a[i])*(b[i] - a[i]) + 4.0*b[i]))/(2.0*b[i]);
-      z[i] = rexp(1, cons[i])[0] + b[i];
-      u[i] = runif(1, 0.0, 1.0)[0];
-      rho[i] = pow(z[i], a[i] - 1.0)*exp(-z[i]*(1.0 - cons[i]));
-      M[i] = pow((a[i] - 1.0)/(1.0 - cons[i]), a[i] - 1.0)*exp(1.0 - a[i]);
-    }
-    z[i] = t[i]*z[i]/b[i];
-    if (NumericVector::is_na(z[i])) {
-      z[i] = R::rgamma(c[i], 1.0/d[i]); 
-      while (z[i] < t[i]) {
-        z[i] = R::rgamma(c[i], 1.0/d[i]);
-      }
-    }
-  }
-  
-  return z;
-  
-}
-
-// [[Rcpp::export]]
-NumericVector rltgammaLazy(NumericVector c, NumericVector d, NumericVector t) {
-  
-  int p = c.size();
+  int p = d.size();
   
   NumericVector z(p, 0.0);
   
   for (int i = 0; i < p; i++) {
-    z[i] = R::rgamma(c[i], 1.0/d[i]); // Has shape-rate parametrization
-    while (z[i] < t[i]) {
-      z[i] = R::rgamma(c[i], 1.0/d[i]);
-    }
+    z[i] = R::rexp(d[i]) + t[i]; 
   }
   
   return z;
@@ -208,12 +169,10 @@ NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
   
   int p = beta.size();
   
-  NumericVector eta = pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*abs(beta), q);
-  // Rcout << "eta: " << eta << "\n";
-  NumericVector shape(p, 1.0);
+  NumericVector etaq = pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*abs(beta), q);
   NumericVector rate(p, pow(2.0, -q/2.0));
   
-  NumericVector gamma = rltgammaLazy(shape, rate, eta);
+  NumericVector gamma = rshiftexp(rate, etaq);
   
   return gamma;
 }
