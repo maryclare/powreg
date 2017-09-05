@@ -79,7 +79,8 @@ NumericVector rshiftexp(NumericVector d, NumericVector t) {
   NumericVector z(p, 0.0);
   
   for (int i = 0; i < p; i++) {
-    z[i] = R::rexp(1.0/d[i]) + t[i]; 
+    z[i] = R::rexp(1.0/d[i]) + t[i]; // Counterintuitively, rexp is parametrized
+    // in terms of scale = 1/rate
   }
   
   return z;
