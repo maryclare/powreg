@@ -6,6 +6,17 @@
 
 using namespace Rcpp;
 
+// ldl
+List ldl(NumericMatrix A);
+RcppExport SEXP _powreg_ldl(SEXP ASEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type A(ASEXP);
+    rcpp_result_gen = Rcpp::wrap(ldl(A));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rtnormrej
 NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, NumericVector r);
 RcppExport SEXP _powreg_rtnormrej(SEXP muSEXP, SEXP sdSEXP, SEXP lSEXP, SEXP rSEXP) {
@@ -57,19 +68,20 @@ BEGIN_RCPP
 END_RCPP
 }
 // sampleBeta
-arma::colvec sampleBeta(NumericVector start, NumericVector DUty, NumericVector delta, NumericVector d, NumericMatrix Vt, double sigsq, NumericMatrix W);
-RcppExport SEXP _powreg_sampleBeta(SEXP startSEXP, SEXP DUtySEXP, SEXP deltaSEXP, SEXP dSEXP, SEXP VtSEXP, SEXP sigsqSEXP, SEXP WSEXP) {
+arma::colvec sampleBeta(NumericVector start, NumericVector Uty, NumericVector delta, NumericVector d, NumericMatrix L, NumericMatrix Linv, double sigsq, NumericMatrix W);
+RcppExport SEXP _powreg_sampleBeta(SEXP startSEXP, SEXP UtySEXP, SEXP deltaSEXP, SEXP dSEXP, SEXP LSEXP, SEXP LinvSEXP, SEXP sigsqSEXP, SEXP WSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type start(startSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type DUty(DUtySEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Uty(UtySEXP);
     Rcpp::traits::input_parameter< NumericVector >::type delta(deltaSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type Vt(VtSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type L(LSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type Linv(LinvSEXP);
     Rcpp::traits::input_parameter< double >::type sigsq(sigsqSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type W(WSEXP);
-    rcpp_result_gen = Rcpp::wrap(sampleBeta(start, DUty, delta, d, Vt, sigsq, W));
+    rcpp_result_gen = Rcpp::wrap(sampleBeta(start, Uty, delta, d, L, Linv, sigsq, W));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -87,13 +99,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // sampler
-List sampler(const NumericVector& DUty, const NumericMatrix& Vt, const NumericVector& d, const NumericMatrix& W, double sigsq, double tausq, double q, const int& samples, NumericVector start, int seed);
-RcppExport SEXP _powreg_sampler(SEXP DUtySEXP, SEXP VtSEXP, SEXP dSEXP, SEXP WSEXP, SEXP sigsqSEXP, SEXP tausqSEXP, SEXP qSEXP, SEXP samplesSEXP, SEXP startSEXP, SEXP seedSEXP) {
+List sampler(const NumericVector& Uty, const NumericMatrix& L, const NumericMatrix& Linv, const NumericVector& d, const NumericMatrix& W, double sigsq, double tausq, double q, const int& samples, NumericVector start, int seed);
+RcppExport SEXP _powreg_sampler(SEXP UtySEXP, SEXP LSEXP, SEXP LinvSEXP, SEXP dSEXP, SEXP WSEXP, SEXP sigsqSEXP, SEXP tausqSEXP, SEXP qSEXP, SEXP samplesSEXP, SEXP startSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type DUty(DUtySEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type Vt(VtSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type Uty(UtySEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Linv(LinvSEXP);
     Rcpp::traits::input_parameter< const NumericVector& >::type d(dSEXP);
     Rcpp::traits::input_parameter< const NumericMatrix& >::type W(WSEXP);
     Rcpp::traits::input_parameter< double >::type sigsq(sigsqSEXP);
@@ -102,19 +115,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type samples(samplesSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type start(startSEXP);
     Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(sampler(DUty, Vt, d, W, sigsq, tausq, q, samples, start, seed));
+    rcpp_result_gen = Rcpp::wrap(sampler(Uty, L, Linv, d, W, sigsq, tausq, q, samples, start, seed));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_powreg_ldl", (DL_FUNC) &_powreg_ldl, 1},
     {"_powreg_rtnormrej", (DL_FUNC) &_powreg_rtnormrej, 4},
     {"_powreg_rshiftexp", (DL_FUNC) &_powreg_rshiftexp, 2},
     {"_powreg_remcol", (DL_FUNC) &_powreg_remcol, 2},
     {"_powreg_remrow", (DL_FUNC) &_powreg_remrow, 2},
-    {"_powreg_sampleBeta", (DL_FUNC) &_powreg_sampleBeta, 7},
+    {"_powreg_sampleBeta", (DL_FUNC) &_powreg_sampleBeta, 8},
     {"_powreg_sampleGamma", (DL_FUNC) &_powreg_sampleGamma, 3},
-    {"_powreg_sampler", (DL_FUNC) &_powreg_sampler, 10},
+    {"_powreg_sampler", (DL_FUNC) &_powreg_sampler, 11},
     {NULL, NULL, 0}
 };
 
