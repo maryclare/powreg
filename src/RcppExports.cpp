@@ -6,62 +6,6 @@
 
 using namespace Rcpp;
 
-// rtnormboundunif
-double rtnormboundunif(double mu, double sd, double lstd, double rstd);
-RcppExport SEXP _powreg_rtnormboundunif(SEXP muSEXP, SEXP sdSEXP, SEXP lstdSEXP, SEXP rstdSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sd(sdSEXP);
-    Rcpp::traits::input_parameter< double >::type lstd(lstdSEXP);
-    Rcpp::traits::input_parameter< double >::type rstd(rstdSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtnormboundunif(mu, sd, lstd, rstd));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rtnormboundnorm
-double rtnormboundnorm(double mu, double sd, double lstd, double rstd);
-RcppExport SEXP _powreg_rtnormboundnorm(SEXP muSEXP, SEXP sdSEXP, SEXP lstdSEXP, SEXP rstdSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sd(sdSEXP);
-    Rcpp::traits::input_parameter< double >::type lstd(lstdSEXP);
-    Rcpp::traits::input_parameter< double >::type rstd(rstdSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtnormboundnorm(mu, sd, lstd, rstd));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rtnormboundhalf
-double rtnormboundhalf(double mu, double sd, double lstd, double rstd);
-RcppExport SEXP _powreg_rtnormboundhalf(SEXP muSEXP, SEXP sdSEXP, SEXP lstdSEXP, SEXP rstdSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sd(sdSEXP);
-    Rcpp::traits::input_parameter< double >::type lstd(lstdSEXP);
-    Rcpp::traits::input_parameter< double >::type rstd(rstdSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtnormboundhalf(mu, sd, lstd, rstd));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rtnormboundtexp
-double rtnormboundtexp(double mu, double sd, double lstd, double rstd);
-RcppExport SEXP _powreg_rtnormboundtexp(SEXP muSEXP, SEXP sdSEXP, SEXP lstdSEXP, SEXP rstdSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sd(sdSEXP);
-    Rcpp::traits::input_parameter< double >::type lstd(lstdSEXP);
-    Rcpp::traits::input_parameter< double >::type rstd(rstdSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtnormboundtexp(mu, sd, lstd, rstd));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rtnormrej
 NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, NumericVector r);
 RcppExport SEXP _powreg_rtnormrej(SEXP muSEXP, SEXP sdSEXP, SEXP lSEXP, SEXP rSEXP) {
@@ -164,10 +108,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_powreg_rtnormboundunif", (DL_FUNC) &_powreg_rtnormboundunif, 4},
-    {"_powreg_rtnormboundnorm", (DL_FUNC) &_powreg_rtnormboundnorm, 4},
-    {"_powreg_rtnormboundhalf", (DL_FUNC) &_powreg_rtnormboundhalf, 4},
-    {"_powreg_rtnormboundtexp", (DL_FUNC) &_powreg_rtnormboundtexp, 4},
     {"_powreg_rtnormrej", (DL_FUNC) &_powreg_rtnormrej, 4},
     {"_powreg_rshiftexp", (DL_FUNC) &_powreg_rshiftexp, 2},
     {"_powreg_remcol", (DL_FUNC) &_powreg_remcol, 2},

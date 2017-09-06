@@ -19,9 +19,8 @@ void set_seed(unsigned int seed) {
   set_seed_r(seed);  
   
 }
-
-// [[Rcpp::export]]
-double rtnormboundunif(double mu, double sd, double lstd, double rstd) {
+// Uniform rejection sampler, via Robert (1995)
+double rtnormboundunif(double lstd, double rstd) {
   double rho = 0.0;
   double u = 1.0;
   double z = 0.0;
@@ -30,42 +29,65 @@ double rtnormboundunif(double mu, double sd, double lstd, double rstd) {
     rho = lstd <= 0.0 && rstd >= 0.0 ? exp(-z*z/2) : lstd > 0.0 ? exp((lstd*lstd -z*z)/2.0) : exp((rstd*rstd -z*z)/2.0);
     u = runif(1, 0.0, 1.0)[0];
   }
-  z = z*sd + mu;
   return z;
 }
 
-// [[Rcpp::export]]
-double rtnormboundnorm(double mu, double sd, double lstd, double rstd) {
+// Lazy normal rejection sampler for truncated normal
+double rtnormboundnorm(double lstd, double rstd) {
   double z = INFINITY;
   while (z < lstd | z > rstd) {
     z = rnorm(1, 0.0, 1.1)[0];
   }
-  z = z*sd + mu;
   return z;
 }
 
-// [[Rcpp::export]]
-double rtnormboundhalf(double mu, double sd, double lstd, double rstd) {
+// Rejection sampler for truncated half normal distribution that
+// can be used when lower bound exceeds 0
+double rtnormboundhalf(double lstd, double rstd) {
   double z = INFINITY;
   while (z < lstd | z > rstd) {
     z = fabs(rnorm(1, 0.0, 1.0)[0]);
   }
-  z = z*sd + mu;
-  return z;
-}
-// This one doesn't quite work
-// [[Rcpp::export]]
-double rtnormboundtexp(double mu, double sd, double lstd, double rstd) {
-  double z = INFINITY;
-  double rate = (lstd + sqrt(lstd*lstd + 4.0))/2.0;
-  while (z > rstd) {
-    z = rexp(1, rate)[0] + lstd;
-  }
-  z = z*sd + mu;
   return z;
 }
 
-double rtnormpos(double mu, double sd, double lstd, double rstd) {
+// Shifted exponential rejection sampler for truncated normal
+// Based on http://www.stat.ncsu.edu/information/library/papers/mimeo2649_Li.pdf
+// This one doesn't quite work
+// double rtnormboundtexp(double lstd, double rstd) {
+//   double z = INFINITY;
+//   double rate = (lstd + sqrt(lstd*lstd + 4.0))/2.0;
+//   while (z > rstd) {
+//     z = rexp(1, rate)[0] + lstd;
+//   }
+//   return z;
+// }
+
+// Inverse-cdf sampler
+// Doesn't save much time  and can be unstable, so not using
+double rtnormboundicdf(double lstd, double rstd) {
+  
+  double plstd = R::pnorm(lstd, 0.0, 1.0, 1, 0);
+  double prstd = R::pnorm(rstd, 0.0, 1.0, 1, 0);
+  double z = 0.0;
+  
+  if (plstd != prstd & plstd != 0.0 & plstd != 1.0 & prstd != 0.0 & prstd != 1.0) {
+  
+    double u = runif(1, 0.0, 1.0)[0];
+    z = R::qnorm((prstd - plstd)*u + plstd, 0.0, 1.0, 1, 0);
+    
+  } else {
+    // Rcout << "Unif sampling\n";
+    z = rtnormboundunif(lstd, rstd);
+  }
+  return z;
+}
+
+// Optimized sampling of truncated normal for when 
+// lower bound exceeds zero based on:
+// http://www.stat.ncsu.edu/information/library/papers/mimeo2649_Li.pdf
+// Did not actually increase speed
+double rtnormpos(double lstd, double rstd) {
   double a0 = 0.2570;
   double b1 = 0.0; 
   double b2 = 0.0;
@@ -74,19 +96,19 @@ double rtnormpos(double mu, double sd, double lstd, double rstd) {
   if (lstd <= a0) {
     b1 = lstd + sqrt(M_PI/2.0)*exp(lstd*lstd/2.0);
     if (rstd <= b1) {
-      z = rtnormboundunif(mu, sd, lstd, rstd);
+      z = rtnormboundunif(lstd, rstd);
     } else {
-      z = rtnormboundhalf(mu, sd, lstd, rstd);
+      z = rtnormboundhalf(lstd, rstd);
     }
     
   } else {
     b2 = lstd + (2.0/(lstd + sqrt(lstd*lstd + 4.0)))*exp((lstd*lstd - lstd*sqrt(lstd*lstd + 4.0))/4.0 + 1.0/2.0);
-    z = rtnormboundunif(mu, sd, lstd, rstd);
+    z = rtnormboundunif(lstd, rstd);
     if (rstd <= b2) {
-      z = rtnormboundunif(mu, sd, lstd, rstd);
+      z = rtnormboundunif(lstd, rstd);
     } else {
-      // z = rtnormboundtexp(mu, sd, lstd, rstd);
-      z = rtnormboundunif(mu, sd, lstd, rstd);
+      // z = rtnormboundtexp(lstd, rstd);
+      z = rtnormboundunif(lstd, rstd);
     }
   }
   return z;
@@ -132,20 +154,7 @@ NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, Num
       }
       z[i] = -(z[i]*sd[i] + mu[i]);
     } else {
-      
-      if (lstd[i] <= 0 & rstd[i] >= 0) {
-        if (rstd[i] <= lstd[i] + sqrt(2.0*M_PI)) {
-          z[i] = rtnormboundunif(mu[i], sd[i], lstd[i], rstd[i]);
-        } else {
-          z[i] = rtnormboundnorm(mu[i], sd[i], lstd[i], rstd[i]);
-        }
-      } else {
-        if (lstd[i] >= 0) {
-          z[i] = rtnormpos(0.0, 1.0, lstd[i], rstd[i])*sd[i] + mu[i];
-        } else {
-          z[i] = -rtnormpos(0.0, 1.0, -rstd[i], -lstd[i])*sd[i] + mu[i];
-        }
-      }
+      z[i] = rtnormboundunif(lstd[i], rstd[i])*sd[i] + mu[i];
     }
   }
   return z;
