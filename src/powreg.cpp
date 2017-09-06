@@ -20,6 +20,78 @@ void set_seed(unsigned int seed) {
   
 }
 
+// [[Rcpp::export]]
+double rtnormboundunif(double mu, double sd, double lstd, double rstd) {
+  double rho = 0.0;
+  double u = 1.0;
+  double z = 0.0;
+  while (u > rho) {
+    z = runif(1, lstd, rstd)[0];
+    rho = lstd <= 0.0 && rstd >= 0.0 ? exp(-z*z/2) : lstd > 0.0 ? exp((lstd*lstd -z*z)/2.0) : exp((rstd*rstd -z*z)/2.0);
+    u = runif(1, 0.0, 1.0)[0];
+  }
+  z = z*sd + mu;
+  return z;
+}
+
+// [[Rcpp::export]]
+double rtnormboundnorm(double mu, double sd, double lstd, double rstd) {
+  double z = INFINITY;
+  while (z < lstd | z > rstd) {
+    z = rnorm(1, 0.0, 1.1)[0];
+  }
+  z = z*sd + mu;
+  return z;
+}
+
+// [[Rcpp::export]]
+double rtnormboundhalf(double mu, double sd, double lstd, double rstd) {
+  double z = INFINITY;
+  while (z < lstd | z > rstd) {
+    z = fabs(rnorm(1, 0.0, 1.0)[0]);
+  }
+  z = z*sd + mu;
+  return z;
+}
+// This one doesn't quite work
+// [[Rcpp::export]]
+double rtnormboundtexp(double mu, double sd, double lstd, double rstd) {
+  double z = INFINITY;
+  double rate = (lstd + sqrt(lstd*lstd + 4.0))/2.0;
+  while (z > rstd) {
+    z = rexp(1, rate)[0] + lstd;
+  }
+  z = z*sd + mu;
+  return z;
+}
+
+double rtnormpos(double mu, double sd, double lstd, double rstd) {
+  double a0 = 0.2570;
+  double b1 = 0.0; 
+  double b2 = 0.0;
+  double z = 0.0;
+  
+  if (lstd <= a0) {
+    b1 = lstd + sqrt(M_PI/2.0)*exp(lstd*lstd/2.0);
+    if (rstd <= b1) {
+      z = rtnormboundunif(mu, sd, lstd, rstd);
+    } else {
+      z = rtnormboundhalf(mu, sd, lstd, rstd);
+    }
+    
+  } else {
+    b2 = lstd + (2.0/(lstd + sqrt(lstd*lstd + 4.0)))*exp((lstd*lstd - lstd*sqrt(lstd*lstd + 4.0))/4.0 + 1.0/2.0);
+    z = rtnormboundunif(mu, sd, lstd, rstd);
+    if (rstd <= b2) {
+      z = rtnormboundunif(mu, sd, lstd, rstd);
+    } else {
+      // z = rtnormboundtexp(mu, sd, lstd, rstd);
+      z = rtnormboundunif(mu, sd, lstd, rstd);
+    }
+  }
+  return z;
+}
+
 // Implements this code to sample from a truncated univariate normal distribution
 // very reliably!
 // https://arxiv.org/pdf/0907.4010.pdf
@@ -60,12 +132,20 @@ NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, Num
       }
       z[i] = -(z[i]*sd[i] + mu[i]);
     } else {
-      while (u[i] > rho[i]) {
-        z[i] = runif(1, lstd[i], rstd[i])[0];
-        rho[i] = lstd[i] <= 0.0 && rstd[i] >= 0.0 ? exp(-z[i]*z[i]/2) : lstd[i] > 0.0 ? exp((lstd[i]*lstd[i] -z[i]*z[i])/2.0) : exp((rstd[i]*rstd[i] -z[i]*z[i])/2.0);
-        u[i] = runif(1, 0.0, 1.0)[0];
+      
+      if (lstd[i] <= 0 & rstd[i] >= 0) {
+        if (rstd[i] <= lstd[i] + sqrt(2.0*M_PI)) {
+          z[i] = rtnormboundunif(mu[i], sd[i], lstd[i], rstd[i]);
+        } else {
+          z[i] = rtnormboundnorm(mu[i], sd[i], lstd[i], rstd[i]);
+        }
+      } else {
+        if (lstd[i] >= 0) {
+          z[i] = rtnormpos(0.0, 1.0, lstd[i], rstd[i])*sd[i] + mu[i];
+        } else {
+          z[i] = -rtnormpos(0.0, 1.0, -rstd[i], -lstd[i])*sd[i] + mu[i];
+        }
       }
-      z[i] = z[i]*sd[i] + mu[i];
     }
   }
   return z;
