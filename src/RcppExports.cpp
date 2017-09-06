@@ -20,6 +20,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rshiftexp
+NumericVector rshiftexp(NumericVector d, NumericVector t);
+RcppExport SEXP _powreg_rshiftexp(SEXP dSEXP, SEXP tSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type d(dSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type t(tSEXP);
+    rcpp_result_gen = Rcpp::wrap(rshiftexp(d, t));
+    return rcpp_result_gen;
+END_RCPP
+}
 // remcol
 arma::mat remcol(arma::mat A, int i);
 RcppExport SEXP _powreg_remcol(SEXP ASEXP, SEXP iSEXP) {
@@ -62,16 +74,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // sampleGamma
-void sampleGamma(NumericVector& b, const double& tausq, const double& q, NumericVector& g);
-RcppExport SEXP _powreg_sampleGamma(SEXP bSEXP, SEXP tausqSEXP, SEXP qSEXP, SEXP gSEXP) {
+NumericVector sampleGamma(NumericVector beta, double tausq, double q);
+RcppExport SEXP _powreg_sampleGamma(SEXP betaSEXP, SEXP tausqSEXP, SEXP qSEXP) {
 BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< const double& >::type tausq(tausqSEXP);
-    Rcpp::traits::input_parameter< const double& >::type q(qSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type g(gSEXP);
-    sampleGamma(b, tausq, q, g);
-    return R_NilValue;
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type tausq(tausqSEXP);
+    Rcpp::traits::input_parameter< double >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(sampleGamma(beta, tausq, q));
+    return rcpp_result_gen;
 END_RCPP
 }
 // sampler
@@ -97,10 +109,11 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_powreg_rtnormrej", (DL_FUNC) &_powreg_rtnormrej, 4},
+    {"_powreg_rshiftexp", (DL_FUNC) &_powreg_rshiftexp, 2},
     {"_powreg_remcol", (DL_FUNC) &_powreg_remcol, 2},
     {"_powreg_remrow", (DL_FUNC) &_powreg_remrow, 2},
     {"_powreg_sampleBeta", (DL_FUNC) &_powreg_sampleBeta, 7},
-    {"_powreg_sampleGamma", (DL_FUNC) &_powreg_sampleGamma, 4},
+    {"_powreg_sampleGamma", (DL_FUNC) &_powreg_sampleGamma, 3},
     {"_powreg_sampler", (DL_FUNC) &_powreg_sampler, 10},
     {NULL, NULL, 0}
 };

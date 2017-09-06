@@ -5,6 +5,10 @@ rtnormrej <- function(mu, sd, l, r) {
     .Call('_powreg_rtnormrej', PACKAGE = 'powreg', mu, sd, l, r)
 }
 
+rshiftexp <- function(d, t) {
+    .Call('_powreg_rshiftexp', PACKAGE = 'powreg', d, t)
+}
+
 remcol <- function(A, i) {
     .Call('_powreg_remcol', PACKAGE = 'powreg', A, i)
 }
@@ -17,8 +21,8 @@ sampleBeta <- function(start, DUty, delta, d, Vt, sigsq, W) {
     .Call('_powreg_sampleBeta', PACKAGE = 'powreg', start, DUty, delta, d, Vt, sigsq, W)
 }
 
-sampleGamma <- function(b, tausq, q, g) {
-    invisible(.Call('_powreg_sampleGamma', PACKAGE = 'powreg', b, tausq, q, g))
+sampleGamma <- function(beta, tausq, q) {
+    .Call('_powreg_sampleGamma', PACKAGE = 'powreg', beta, tausq, q)
 }
 
 sampler <- function(DUty, Vt, d, W, sigsq, tausq, q, samples, start, seed) {

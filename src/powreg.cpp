@@ -72,7 +72,7 @@ double rtnormboundicdf(double lstd, double rstd) {
   double z = 0.0;
   
   if (plstd != prstd & plstd != 0.0 & plstd != 1.0 & prstd != 0.0 & prstd != 1.0) {
-  
+    
     double u = runif(1, 0.0, 1.0)[0];
     z = R::qnorm((prstd - plstd)*u + plstd, 0.0, 1.0, 1, 0);
     
@@ -161,6 +161,22 @@ NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, Num
 }
 
 // [[Rcpp::export]]
+NumericVector rshiftexp(NumericVector d, NumericVector t) {
+  
+  int p = d.size();
+  
+  NumericVector z(p, 0.0);
+  
+  for (int i = 0; i < p; i++) {
+    z[i] = rexp(1, d[i])[0] + t[i]; // Counterintuitively, rexp is parametrized
+    // in terms of scale = 1/rate
+  }
+  
+  return z;
+  
+}
+
+// [[Rcpp::export]]
 arma::mat remcol(arma::mat A, int i) {
   A.shed_col(i);
   return A;
@@ -235,17 +251,16 @@ arma::colvec sampleBeta(NumericVector start, NumericVector DUty,
 }
 
 // [[Rcpp::export]]
-void sampleGamma(NumericVector &b, const double &tausq, const double &q, 
-                 NumericVector &g) {
+NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
   
-  NumericVector::iterator ib = b.begin();
-  NumericVector::iterator ig = g.begin();
+  int p = beta.size();
   
-  while (ig != g.end()) {
-    *ig = rexp(1, pow(2.0, -q/2.0))[0] + pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*fabs(*ib), q);
-    ib++;
-    ig++;
-  }
+  NumericVector etaq = pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*abs(beta), q);
+  NumericVector rate(p, pow(2.0, -q/2.0));
+  
+  NumericVector gamma = rshiftexp(rate, etaq);
+  
+  return gamma;
 }
 
 // [[Rcpp::export]]
@@ -259,14 +274,14 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
   
   NumericMatrix resBeta(samples, p);
   NumericMatrix resGamma(samples, p);
-  NumericMatrix resVar(samples, 2);
   NumericVector b = start;
   NumericVector g(p, 0.0);
   NumericVector delta(p, 0.0);
   
   // Cat statements in this loop can be used to catch errors
   for (int i = 0; i < samples; i++) {
-    sampleGamma(b, tausq, q, g);
+    // Might be better to sample from inverse gamma but rejection sampler for that is not obvious
+    g = sampleGamma(b, tausq, q);
     // Rcout << "g: " << g << "\n";
     delta = sqrt(tgamma(1.0/q)/tgamma(3.0/q))*sqrt(tausq/2.0)*pow(g, 1.0/q); // This checks out
     // Rcout << "delta: " << delta << "\n";
@@ -274,13 +289,10 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
     // Rcout << "b: " << b << "\n";
     resBeta(i,_) = b;
     resGamma(i,_) = g;
-    resVar(i,0) = tausq;
-    resVar(i,1) = sigsq;
   }
   
   
   return(Rcpp::List::create(Rcpp::Named("beta")=resBeta,
-                            Rcpp::Named("gamma")=resGamma,
-                            Rcpp::Named("var")=resVar));
+                            Rcpp::Named("gamma")=resGamma));
   
 }
