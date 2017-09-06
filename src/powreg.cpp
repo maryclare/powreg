@@ -19,42 +19,6 @@ void set_seed(unsigned int seed) {
   set_seed_r(seed);  
   
 }
-// Uses recursive algorithm given here: 
-// https://en.wikipedia.org/wiki/Cholesky_decomposition
-// [[Rcpp::export]]
-List ldl(NumericMatrix A) {
-  int p = A.nrow();
-  
-  NumericMatrix D(p, p);
-  NumericMatrix L(p, p);
-  
-  for(int j = 0; j < p; j++) {
-    L(j, j) = 1.0;
-    D(j, j) = A(j, j);
-    if (j > 0) {
-      for (int k = 0; k < j; k++) {
-        D(j, j) = D(j, j) - L(j, k)*L(j, k)*D(k, k);
-      }
-    }
-    if (j < p) {
-      for (int i = (j + 1); i < p; i++) {
-        L(i, j) = A(i, j);
-        if (j > 0) {
-          for (int k = 0; k < j; k++) {
-            L(i, j) = L(i, j) - L(i, k)*L(j, k)*D(k, k);
-          }
-        }
-        if (D(j, j) == 0) {
-          L(i, j) = 0;
-        } else {
-          L(i, j) = L(i, j)/D(j, j);
-        }
-      }
-    }
-  }
-  return(Rcpp::List::create(Rcpp::Named("L")=L,
-                            Rcpp::Named("D")=D));
-}
 
 // Implements this code to sample from a truncated univariate normal distribution
 // very reliably!
@@ -136,9 +100,8 @@ arma::colvec remrow(arma::colvec a, int i) {
 }
 
 // [[Rcpp::export]]
-arma::colvec sampleBeta(NumericVector start, NumericVector Uty,
-                        NumericVector delta, NumericVector d, NumericMatrix L, 
-                        NumericMatrix Linv, double sigsq, NumericMatrix W) {
+arma::colvec sampleBeta(NumericVector start, NumericVector DUty,
+                        NumericVector delta, NumericVector d, NumericMatrix Vt, double sigsq, NumericMatrix W) {
   
   int p = start.size();
   int q = delta.size();
@@ -146,7 +109,7 @@ arma::colvec sampleBeta(NumericVector start, NumericVector Uty,
   // Convert to ARMA objects, trying to minimize memory reallocation:
   // According to: http://dirk.eddelbuettel.com/papers/rcpp_ku_nov2013-part2.pdf
   arma::colvec startAR(start.begin(), start.size(), false);
-  arma::colvec UtyAR(Uty.begin(), Uty.size(), false);
+  arma::colvec DUtyAR(DUty.begin(), DUty.size(), false);
   arma::colvec dAR(d.begin(), d.size(), false);
   
   arma::colvec deltaAR =  arma::zeros<arma::colvec>(2*q);
@@ -158,11 +121,10 @@ arma::colvec sampleBeta(NumericVector start, NumericVector Uty,
     }
   }
   
-  arma::mat LAR(L.begin(), L.nrow(), L.ncol(), false);
-  arma::mat LinvAR(Linv.begin(), Linv.nrow(), Linv.ncol(), false);
+  arma::mat VtAR(Vt.begin(), Vt.nrow(), Vt.ncol(), false);
   arma::mat WAR(W.begin(), W.nrow(), W.ncol(), false);
   
-  arma::colvec z = LAR.t()*startAR;
+  arma::colvec z = VtAR*startAR;
   
   arma::colvec right = arma::zeros<arma::colvec>(q); arma::colvec left=arma::zeros<arma::colvec>(q);
   NumericVector lowlim(1, 0.0); NumericVector upplim(1, 0.0);
@@ -170,7 +132,8 @@ arma::colvec sampleBeta(NumericVector start, NumericVector Uty,
   arma::colvec ratio=arma::zeros<arma::colvec>(q);
   arma::colvec ret=arma::zeros<arma::colvec>(p);
   
-  for (int i = (p - 1); i >= 0; i--) {
+  for (int i = 0; i < p; i++) {
+    
     right = deltaAR - remcol(WAR, i)*remrow(z, i);
     
     left = WAR.col(i);
@@ -180,19 +143,19 @@ arma::colvec sampleBeta(NumericVector start, NumericVector Uty,
     upplim = arma::min(ratio.elem(find(left > 0.0)));
     lowlim = arma::max(ratio.elem(find(left < 0.0)));
     
-    mm = UtyAR.row(i)/dAR.row(i);
+    mm = DUtyAR.row(i)/(dAR.row(i)*dAR.row(i));
     
-    ss = sigsq/dAR.row(i);
+    ss = sigsq/((dAR.row(i)*dAR.row(i)));
     
     if (dAR.row(i)[0] > 0) {
       z.row(i) = rtnormrej(mm, sqrt(ss), lowlim, upplim)[0];
       // Rcout << z.row(i) << " " << mm << " " << ss << " " << lowlim << " " << upplim << "\n";
-    } else {
+    } else if (dAR.row(i)[0] == 0) {
       z.row(i) = R::runif(lowlim[0], upplim[0]);
     }
   }
   
-  ret = LinvAR.t()*z;
+  ret = VtAR.t()*z;
   
   return ret;
   
@@ -212,14 +175,13 @@ NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
 }
 
 // [[Rcpp::export]]
-List sampler(const NumericVector &Uty, const NumericMatrix &L, 
-             const NumericMatrix &Linv, const NumericVector &d,
+List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVector &d,
              const NumericMatrix &W, double sigsq, double tausq, double q, 
              const int &samples, NumericVector start, int seed) {
   
   set_seed(seed);
   
-  int p = Uty.size();
+  int p = DUty.size();
   
   NumericMatrix resBeta(samples, p);
   NumericMatrix resGamma(samples, p);
@@ -230,11 +192,12 @@ List sampler(const NumericVector &Uty, const NumericMatrix &L,
   
   // Cat statements in this loop can be used to catch errors
   for (int i = 0; i < samples; i++) {
+    // Might be better to sample from inverse gamma but rejection sampler for that is not obvious
     g = sampleGamma(b, tausq, q);
     // Rcout << "g: " << g << "\n";
     delta = sqrt(tgamma(1.0/q)/tgamma(3.0/q))*sqrt(tausq/2.0)*pow(g, 1.0/q); // This checks out
     // Rcout << "delta: " << delta << "\n";
-    b = sampleBeta(b, Uty, delta, d, L, Linv, sigsq, W);
+    b = sampleBeta(b, DUty, delta, d, Vt, sigsq, W);
     // Rcout << "b: " << b << "\n";
     resBeta(i,_) = b;
     resGamma(i,_) = g;
