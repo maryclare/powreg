@@ -161,17 +161,6 @@ NumericVector rtnormrej(NumericVector mu, NumericVector sd, NumericVector l, Num
 }
 
 // [[Rcpp::export]]
-NumericVector rshiftexp(NumericVector d, NumericVector t) {
-  
-  int p = d.size();
-  
-  NumericVector z = rexp(p, d) + t;
-  
-  return z;
-  
-}
-
-// [[Rcpp::export]]
 arma::mat remcol(arma::mat A, int i) {
   A.shed_col(i);
   return A;
@@ -246,16 +235,17 @@ arma::colvec sampleBeta(NumericVector start, NumericVector DUty,
 }
 
 // [[Rcpp::export]]
-NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
+void sampleGamma(NumericVector &b, const double &tausq, const double &q, 
+                 NumericVector &g) {
   
-  int p = beta.size();
+  NumericVector::iterator ib = b.begin();
+  NumericVector::iterator ig = g.begin();
   
-  NumericVector etaq = pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*abs(beta), q);
-  NumericVector rate(p, pow(2.0, -q/2.0));
-  
-  NumericVector gamma = rshiftexp(rate, etaq);
-  
-  return gamma;
+  while (ig != g.end()) {
+    *ig = rexp(1, pow(2.0, -q/2.0))[0] + pow(sqrt(tgamma(3.0/q)/tgamma(1.0/q))*sqrt(2.0/tausq)*fabs(*ib), q);
+    ib++;
+    ig++;
+  }
 }
 
 // [[Rcpp::export]]
@@ -276,8 +266,7 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
   
   // Cat statements in this loop can be used to catch errors
   for (int i = 0; i < samples; i++) {
-    // Might be better to sample from inverse gamma but rejection sampler for that is not obvious
-    g = sampleGamma(b, tausq, q);
+    sampleGamma(b, tausq, q, g);
     // Rcout << "g: " << g << "\n";
     delta = sqrt(tgamma(1.0/q)/tgamma(3.0/q))*sqrt(tausq/2.0)*pow(g, 1.0/q); // This checks out
     // Rcout << "delta: " << delta << "\n";
