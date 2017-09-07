@@ -1,5 +1,5 @@
 #' @export
-powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500) {
+powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500, thin = 1) {
   n <- nrow(X)
   p <- ncol(X)
   
@@ -28,5 +28,5 @@ powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500) {
   return(sampler(DUty = DUty, Vt = Vt, d = d,
                  W = W, sigsq = sig.sq, tausq = tau.sq, q = q, 
                  samples = samples, start = start, seed = rpois(1, 10) + 1,
-                 burn = burn))
+                 burn = burn, thin = thin))
 }

@@ -266,7 +266,8 @@ NumericVector sampleGamma(NumericVector beta, double tausq, double q) {
 // [[Rcpp::export]]
 List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVector &d,
              const NumericMatrix &W, double sigsq, double tausq, double q, 
-             const int &samples, NumericVector start, int seed, const int &burn) {
+             const int &samples, NumericVector start, int seed, const int &burn, 
+             const int &thin) {
   
   set_seed(seed);
   
@@ -279,7 +280,7 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
   NumericVector delta(p, 0.0);
   
   // Cat statements in this loop can be used to catch errors
-  for (int i = 0; i < (samples + burn); i++) {
+  for (int i = 0; i < (samples*thin + burn); i++) {
     // Might be better to sample from inverse gamma but rejection sampler for that is not obvious
     g = sampleGamma(b, tausq, q);
     // Rcout << "g: " << g << "\n";
@@ -287,9 +288,9 @@ List sampler(const NumericVector &DUty, const NumericMatrix &Vt, const NumericVe
     // Rcout << "delta: " << delta << "\n";
     b = sampleBeta(b, DUty, delta, d, Vt, sigsq, W);
     // Rcout << "b: " << b << "\n";
-    if (i >= burn) {
-      resBeta(i - burn,_) = b;
-      resGamma(i - burn,_) = g;
+    if (i >= burn & i % thin == 0) {
+      resBeta((i - burn)/thin,_) = b;
+      resGamma((i - burn)/thin,_) = g;
     }
   }
   
