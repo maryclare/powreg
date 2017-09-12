@@ -26,7 +26,7 @@ powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500, thin
   # I think this is a replicable way of setting a seed, assuming a seed has been
   # set in R
   return(sampler(DUty = DUty, Vt = Vt, d = d,
-                 W = W, sigsq = sig.sq, tausq = tau.sq, q = q, 
+                 W = W, sigsq = sigma.sq, tausq = tau.sq, q = q, 
                  samples = samples, start = start, seed = rpois(1, 10) + 1,
                  burn = burn, thin = thin))
 }
