@@ -194,7 +194,7 @@ varcomp <- function(y, X) {
   s.sq.max <- s.sq.r.sq(r.sq.max, y = y, X = X)
   tau.sq.max <- r.sq.max*s.sq.max
   
-  return("sigma.beta.sq.hat" = tau.sq.max, "sigma.epsi.sq.hat" = s.sq.max)
+  return(c(tau.sq.max,s.sq.max))
 }
 
 
