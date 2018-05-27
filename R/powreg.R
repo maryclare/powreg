@@ -128,6 +128,14 @@ obj.r.sq <- function(r.sq, y.tilde, d) {
   -n*log(s.sq) - sum(log(1 + r.sq*d^2)) - sum(y.tilde^2/(1 + r.sq*d^2))/s.sq
 }
 
+#' Function for computing the profile likelihood of the variance ratio under normal-normal model
+#'
+#' \code{varcomp}
+#' @param \code{r.sq} variance ratio
+#' @param \code{y} regression response
+#' @param \code{X} regression design matrix
+#' @return Objective function value
+#' @export
 obj.varcomp <- function(r.sq, y = y, X = X) {
   
   n <- nrow(X); p <- ncol(X)
@@ -155,7 +163,12 @@ obj.varcomp <- function(r.sq, y = y, X = X) {
 #' @export
 varcomp <- function(y, X) {
   
-  r.sq <- exp(seq(log(10^(-14)), log(10^(14)), length.out = 100000))
+  upper.lim <- 100
+  while (s.sq.r.sq(upper.lim, y = y, X = X) > 10^(-5)) {
+    upper.lim <- upper.lim*1.1
+  }
+  
+  r.sq <- exp(seq(log(10^(-14)), log(upper.lim), length.out = 100000))
   obj <- obj.varcomp(r.sq, y = y, X = X)
   max.obj <- which(obj == max(obj))
   if (length(max.obj) > 1) {
