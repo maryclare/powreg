@@ -145,6 +145,14 @@ obj.varcomp <- function(r.sq, y = y, X = X) {
   return(obj)
 }
 
+#' Function for computing maximum likelihood estimates of variance parameters under normal-normal model
+#'
+#' \code{varcomp}
+#'
+#' @param \code{y} regression response
+#' @param \code{X} regression design matrix
+#' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat}
+#' @export
 varcomp <- function(y, X) {
   
   r.sq <- exp(seq(log(10^(-14)), log(10^(14)), length.out = 100000))
