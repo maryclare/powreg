@@ -103,6 +103,94 @@ nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is t
   }
   return(x.new)
 }
+
+#' Some functions for doing variance component estimation
+s.sq.r.sq <- function(r.sq, y.tilde = NULL, d = NULL, y = NULL, X = NULL) {
+  if (is.null(y.tilde) & is.null(d)) {
+    svd <- svd(X, nu = nrow(X))
+    U <- svd$u
+    y.tilde <- crossprod(U, y)
+    d <- c(svd$d, rep(0, nrow(X) - min(dim(X))))
+  }
+  
+  s.sq <- numeric(length(r.sq))
+  
+  for (i in 1:length(r.sq)) {
+    
+    s.sq[i] <- mean(y.tilde^2/(1 + r.sq[i]*d^2))
+  }
+  return(s.sq)
+}
+
+obj.r.sq <- function(r.sq, y.tilde, d) {
+  n <- length(y.tilde)
+  s.sq <- s.sq.r.sq(r.sq = r.sq, y.tilde = y.tilde, d = d)
+  -n*log(s.sq) - sum(log(1 + r.sq*d^2)) - sum(y.tilde^2/(1 + r.sq*d^2))/s.sq
+}
+
+obj.varcomp <- function(r.sq, y = y, X = X) {
+  
+  n <- nrow(X); p <- ncol(X)
+  svd <- svd(X, nu = n)
+  U <- svd$u
+  y.tilde <- crossprod(U, y)
+  d <- c(svd$d, rep(0, n - min(n, p)))
+  
+  n <- length(y.tilde)
+  obj <- numeric(length(r.sq)) 
+  
+  for (i in 1:length(r.sq)) {
+    obj[i] <- obj.r.sq(r.sq = r.sq[i], y.tilde = y.tilde, d = d)
+  }
+  return(obj)
+}
+
+varcomp <- function(y, X) {
+  
+  r.sq <- exp(seq(log(10^(-14)), log(10^(14)), length.out = 100000))
+  obj <- obj.varcomp(r.sq, y = y, X = X)
+  max.obj <- which(obj == max(obj))
+  if (length(max.obj) > 1) {
+    obj.min <- min(max.obj)
+    obj.max <- max(max.obj)
+  } else if (max.obj == length(r.sq)) {
+    obj.min <- max.obj - 1
+    obj.max <- max.obj
+  } else if (max.obj == 1) {
+    obj.min <- max.obj
+    obj.max <- max.obj + 1
+  } else {
+    obj.min <- max.obj - 1
+    obj.max <- max.obj + 1
+  }
+  max.diff <- max(c(abs(abs(obj[-1] - obj[-length(obj)]))), na.rm = TRUE)
+  while (max.diff > 10^(-12)) {
+    r.sq <- exp(seq(log(r.sq[obj.min]), log(r.sq[obj.max]), length.out = 100))
+    obj <- obj.varcomp(r.sq, y = y, X = X)
+    max.obj <- which(obj == max(obj))
+    if (length(max.obj) > 1) {
+      obj.min <- min(max.obj)
+      obj.max <- max(max.obj)
+    } else if (max.obj == length(r.sq)) {
+      obj.min <- max.obj - 1
+      obj.max <- max.obj
+    } else {
+      obj.min <- max.obj - 1
+      obj.max <- max.obj + 1
+    }
+    max.diff <- max(c(abs(abs(obj[-1] - obj[-length(obj)]))), na.rm = TRUE)
+  }
+  
+  
+  r.sq.max <- r.sq[min(max.obj)]
+  s.sq.max <- s.sq.r.sq(r.sq.max, y = y, X = X)
+  tau.sq.max <- r.sq.max*s.sq.max
+  
+  return("sigma.beta.sq.hat" = tau.sq.max, "sigma.epsi.sq.hat" = s.sq.max)
+}
+
+
+
 #' Function for estimating tuning parameters
 #'
 #' \code{estRegPars}
@@ -155,9 +243,11 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
     sigma.epsi.sq.hat <- sig.2.ests[2]
     
   } else {
-    vpars <- rrmmle(y = y, X = X)
-    sigma.beta.sq.hat <- vpars[2]
-    sigma.epsi.sq.hat <- vpars[3]
+    vpars <- varcomp(y = y, X = X) # rrmmle(y = y, X = X)
+    sigma.beta.sq.hat <- vpars[1]
+    sigma.epsi.sq.hat <- vpars[2]
+    # sigma.beta.sq.hat <- vpars[2]
+    # sigma.epsi.sq.hat <- vpars[3]
   }
   
   
