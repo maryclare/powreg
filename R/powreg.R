@@ -163,13 +163,33 @@ obj.varcomp <- function(r.sq, y = y, X = X) {
 #' @export
 varcomp <- function(y, X) {
   
+  # Some code for simulations
+  # n <- 5
+  # p <- 10
+  # 
+  # X <- matrix(rnorm(n*p), nrow = n, ncol = p)
+  # beta <- rnorm(p)
+  # y <- X%*%beta + rnorm(n)
+  
+  # no.noise <- FALSE
   upper.lim <- 100
-  while (s.sq.r.sq(upper.lim, y = y, X = X) > 10^(-5)) {
+  while (s.sq.r.sq(upper.lim, y = y, X = X) > 10^(-14)) {
     upper.lim <- upper.lim*1.1
   }
   
   r.sq <- exp(seq(log(10^(-14)), log(upper.lim), length.out = 100000))
   obj <- obj.varcomp(r.sq, y = y, X = X)
+  # der <- obj[-1] - obj[-length(obj)]
+  # print(range(der))
+  # if (min(der) < 0 & min(der) > -10^(-14)) {
+  #   no.noise <- TRUE
+  # }
+  # par(mfrow = c(1, 2))
+  # plot(r.sq[r.sq < 2], obj[r.sq < 2], type = "l")
+  # plot(r.sq, obj, type = "l")
+  # der[abs(der) < 10^(-12)] <- sign(der[abs(der) < 10^(-12)])*10^(-12)
+  # der[der == 0] <- 10^(-12)
+  # sign.changes <- which(sign(der[-1]) != sign(der[-length(der)]))
   max.obj <- which(obj == max(obj))
   if (length(max.obj) > 1) {
     obj.min <- min(max.obj)
@@ -206,6 +226,8 @@ varcomp <- function(y, X) {
   r.sq.max <- r.sq[min(max.obj)]
   s.sq.max <- s.sq.r.sq(r.sq.max, y = y, X = X)
   tau.sq.max <- r.sq.max*s.sq.max
+  
+  # print(c(s.sq.max, tau.sq.max))
   
   return(c(tau.sq.max,s.sq.max))
 }
