@@ -136,13 +136,15 @@ obj.r.sq <- function(r.sq, y.tilde, d) {
 #' @param \code{X} regression design matrix
 #' @return Objective function value
 #' @export
-obj.varcomp <- function(r.sq, y = y, X = X) {
+obj.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
   
-  n <- nrow(X); p <- ncol(X)
-  svd <- svd(X, nu = n)
-  U <- svd$u
-  y.tilde <- crossprod(U, y)
-  d <- c(svd$d, rep(0, n - min(n, p)))
+  if (is.null(y.tilde) & is.null(d)) {
+    n <- nrow(X); p <- ncol(X)
+    svd <- svd(X, nu = n)
+    U <- svd$u
+    y.tilde <- crossprod(U, y)
+    d <- c(svd$d, rep(0, n - min(n, p)))
+  }
   
   n <- length(y.tilde)
   obj <- numeric(length(r.sq)) 
@@ -173,12 +175,25 @@ varcomp <- function(y, X) {
   
   # no.noise <- FALSE
   upper.lim <- 100
-  while (s.sq.r.sq(upper.lim, y = y, X = X) > 10^(-14)) {
-    upper.lim <- upper.lim*1.1
+  
+  svd <- svd(X, nu = nrow(X))
+  U <- svd$u
+  y.tilde <- crossprod(U, y)
+  d <- c(svd$d, rep(0, nrow(X) - min(dim(X))))
+  
+  s.sq.r.sq.val <- s.sq.r.sq(upper.lim, y = y, X = X, y.tilde = y.tilde, d = d)
+  
+  while (s.sq.r.sq.val > 10^(-14)) {
+    s.sq.r.sq.val <- s.sq.r.sq(upper.lim*1.1, y = y, X = X, y.tilde = y.tilde, d = d)
+    if (!is.nan(s.sq.r.sq.val)) {
+      upper.lim <- upper.lim*1.1
+    } else {
+      break
+    }
   }
   
   r.sq <- exp(seq(log(10^(-14)), log(upper.lim), length.out = 100000))
-  obj <- obj.varcomp(r.sq, y = y, X = X)
+  obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   # der <- obj[-1] - obj[-length(obj)]
   # print(range(der))
   # if (min(der) < 0 & min(der) > -10^(-14)) {
