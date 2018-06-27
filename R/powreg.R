@@ -104,6 +104,50 @@ nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is t
   return(x.new)
 }
 
+# Also need comparison functions to compute Dirichlet Laplace a
+
+fa <- function(a, kurt, p) {
+  6*(p*(a*p + 1)*(a + 2)*(a + 3))/((a + 1)*(a*p + 2)*(a*p + 3)) - kurt
+}
+
+fpa <- function(a, p) {
+  .e1 <- a * p
+  .e2 <- 1 + a
+  .e3 <- 2 + .e1
+  .e4 <- 3 + .e1
+  .e6 <- .e2 * .e3 * .e4
+  .e7 <- 1 + .e1
+  .e8 <- 2 * a
+  .e9 <- 2 + a
+  .e10 <- 3 + a
+  p * (6 * ((.e7 * .e9 + (1 + p * (2 + .e8)) * .e10)/.e6) - 
+         6 * (((2 + p * (1 + .e8)) * .e4 + p * .e2 * .e3) * .e7 * 
+                .e9 * .e10/.e6^2))
+}
+
+# Use Newton's method: https://en.wikipedia.org/wiki/Newton%27s_method
+#' @export
+#' \code{nra}
+#' @param \code{kurt} kurtosis value
+#' @param \code{p} number of covariates
+#' @param \code{sval} starting value for Dirichlet parameter
+#' @param \code{tol} tolerance for Dirichlet parameter
+#' @return Value of Dirichlet parameter a
+#' @export
+nra <- function(kurt, p, sval = 1, tol = 10^(-12)) { # This starting value is the lowest possible
+  # Kurtosis is bounded below by 1.8, so round if needed
+  kurt <- ifelse(kurt <= 6, 6, kurt)
+  # Kurtosis greater than 1.8 gives a q value of 1086.091
+  # Value of fpq at q = 1086.091 is about -10^(-8), so the curve *is* pretty flat at this point
+  x.old <- Inf
+  x.new <- sval
+  while (abs(x.new - x.old) > tol) {
+    x.old <- x.new
+    x.new <- x.old - fa(x.old, kurt = kurt, p = p)/fpa(x.old, p = p)
+  }
+  return(x.new)
+}
+
 #' Some functions for doing variance component estimation
 s.sq.r.sq <- function(r.sq, y.tilde = NULL, d = NULL, y = NULL, X = NULL) {
   if (is.null(y.tilde) & is.null(d)) {
@@ -256,9 +300,11 @@ varcomp <- function(y, X) {
 #' @param \code{y} regression response
 #' @param \code{X} regression design matrix
 #' @param \code{delta} ridge regression parameter for when X is not full rank
+#' @param \code{dl} TRUE if Dirichlet-Laplace Dirichlet parameter should be computed (as alternative to exponential power prior shape parameter), defaults to FALSE 
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
-estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE) {
+estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE,
+                      dl = FALSE) {
   
   
   p <- ncol(X)
@@ -316,7 +362,11 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
   test.stat <- (mean(b^4))/(mean(b^2)^2)
   
   kappa.hat <- (alpha.beta^2/gamma.beta)*(test.stat - omega.beta/alpha.beta^2)
-  q.hat <- ifelse(comp.q, nrq(kappa.hat), NA)
+  if (!dl) {
+    q.hat <- ifelse(comp.q, nrq(kappa.hat), NA)
+  } else {
+    q.hat <- ifelse(comp.q, nra(kappa.hat, p = p), NA)
+  }
   
   return(list("sigma.beta.sq.hat" = sigma.beta.sq.hat,
               "sigma.epsi.sq.hat" = sigma.epsi.sq.hat,
