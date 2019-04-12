@@ -87,7 +87,7 @@ fpq <- function(q) {
 #' @export
 nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is the lowest possible
   # Kurtosis is bounded below by 1.8, so round if needed
-  kurt <- ifelse(kurt <= 1.8, 1.81, kurt)
+  kurt <- ifelse(kurt <= 1.801, 1.801, kurt)
   # Kurtosis greater than 1.8 gives a q value of 1086.091
   # Value of fpq at q = 1086.091 is about -10^(-8), so the curve *is* pretty flat at this point
   if (kurt < 6) {
@@ -282,7 +282,7 @@ varcomp <- function(y, X, diff.tol) {
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
 estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE,
-                      diff.tol = 10^(-7)) {
+                      diff.tol = 10^(-14)) {
   
   
   p <- ncol(X)
@@ -326,7 +326,7 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
     
   } else {
     vpars <- varcomp(y = y, X = X, diff.tol = diff.tol) # rrmmle(y = y, X = X)
-    sigma.beta.sq.hat <- vpars[1]
+    asigma.beta.sq.hat <- vpars[1]
     sigma.epsi.sq.hat <- vpars[2]
     # sigma.beta.sq.hat <- vpars[2]
     # sigma.epsi.sq.hat <- vpars[3]
