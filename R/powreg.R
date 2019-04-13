@@ -326,7 +326,7 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
     
   } else {
     vpars <- varcomp(y = y, X = X, diff.tol = diff.tol) # rrmmle(y = y, X = X)
-    asigma.beta.sq.hat <- vpars[1]
+    sigma.beta.sq.hat <- vpars[1]
     sigma.epsi.sq.hat <- vpars[2]
     # sigma.beta.sq.hat <- vpars[2]
     # sigma.epsi.sq.hat <- vpars[3]
