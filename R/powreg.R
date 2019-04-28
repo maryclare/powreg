@@ -184,7 +184,7 @@ obj.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
 #' @param \code{X} regression design matrix
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat}
 #' @export
-varcomp <- function(y, X, diff.tol) {
+varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
   
   # Some code for simulations
   # n <- 5
@@ -204,7 +204,7 @@ varcomp <- function(y, X, diff.tol) {
   
   s.sq.r.sq.val <- s.sq.r.sq(upper.lim, y = y, X = X, y.tilde = y.tilde, d = d)
   
-  while (s.sq.r.sq.val > 10^(-14)) {
+  while (s.sq.r.sq.val > min.sig.sq) {
     s.sq.r.sq.val <- s.sq.r.sq(upper.lim*1.1, y = y, X = X, y.tilde = y.tilde, d = d)
     if (!is.nan(s.sq.r.sq.val)) {
       upper.lim <- upper.lim*1.1
@@ -213,7 +213,7 @@ varcomp <- function(y, X, diff.tol) {
     }
   }
   
-  r.sq <- exp(seq(log(10^(-14)), log(upper.lim), length.out = 100000))
+  r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = 100000))
   obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   obj <- obj[1:max(which(obj[-1] - obj[-length(obj)] <= 0))] # Avoid boundary solutions
   # der <- obj[-1] - obj[-length(obj)]
@@ -282,7 +282,8 @@ varcomp <- function(y, X, diff.tol) {
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
 estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE,
-                      diff.tol = 10^(-14)) {
+                      diff.tol = 10^(-14), min.sig.sq = 10^(-14), 
+                      min.r.sq = 10^(-14)) {
   
   
   p <- ncol(X)
@@ -325,7 +326,8 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
     sigma.epsi.sq.hat <- sig.2.ests[2]
     
   } else {
-    vpars <- varcomp(y = y, X = X, diff.tol = diff.tol) # rrmmle(y = y, X = X)
+    vpars <- varcomp(y = y, X = X, diff.tol = diff.tol,
+                     min.sig.sq = min.sig.sq, min.r.sq = min.r.sq) # rrmmle(y = y, X = X)
     sigma.beta.sq.hat <- vpars[1]
     sigma.epsi.sq.hat <- vpars[2]
     # sigma.beta.sq.hat <- vpars[2]
