@@ -215,7 +215,9 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
   
   r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = 100000))
   obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-  obj <- obj[1:max(which(obj[-1] - obj[-length(obj)] <= 0))] # Avoid boundary solutions
+  # Avoid boundary solutions
+  r.sq <- r.sq[1:(max(which(obj[-1] - obj[-length(obj)] <= 0)))]
+  obj <- obj[1:(max(which(obj[-1] - obj[-length(obj)] <= 0)))] 
   # der <- obj[-1] - obj[-length(obj)]
   # print(range(der))
   # if (min(der) < 0 & min(der) > -10^(-14)) {
@@ -282,7 +284,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}
 #' @export
 estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE,
-                      diff.tol = 10^(-14), min.sig.sq = 10^(-14), 
+                      diff.tol = 10^(-12), min.sig.sq = 10^(-14), 
                       min.r.sq = 10^(-14)) {
   
   
