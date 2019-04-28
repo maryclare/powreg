@@ -215,6 +215,7 @@ varcomp <- function(y, X, diff.tol) {
   
   r.sq <- exp(seq(log(10^(-14)), log(upper.lim), length.out = 100000))
   obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
+  obj <- obj[1:max(which(obj[-1] - obj[-length(obj)] <= 0))] # Avoid boundary solutions
   # der <- obj[-1] - obj[-length(obj)]
   # print(range(der))
   # if (min(der) < 0 & min(der) > -10^(-14)) {
@@ -258,7 +259,6 @@ varcomp <- function(y, X, diff.tol) {
     }
     max.diff <- max(c(abs(obj[-1] - obj[-length(obj)])), na.rm = TRUE)
   }
-  
   
   r.sq.max <- r.sq[min(max.obj)]
   s.sq.max <- s.sq.r.sq(r.sq.max, y = y, X = X)
