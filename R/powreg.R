@@ -1,5 +1,6 @@
 #' @export
-powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500, thin = 1) {
+powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500, thin = 1, del = NULL,
+                   start = NULL) {
   n <- nrow(X)
   p <- ncol(X)
   
@@ -16,8 +17,12 @@ powreg <- function(y, X, sigma.sq, tau.sq, q, samples =  50000, burn = 500, thin
   DUty <- crossprod(crossprod(t(U), D), y)
   W <- crossprod(t(rbind(diag(rep(1, p)), diag(rep(-1, p)))), t(Vt))
   A <- crossprod(X)
-  del <- (1 - min(eigen(A)$values))
-  start <- as.numeric(crossprod(solve(A + del*diag(ncol(X))), crossprod(X, y)))
+  if (is.null(del)) {
+    del <- (1 - min(eigen(A)$values))
+  }
+  if (is.null(start)) {
+    start <- as.numeric(crossprod(solve(A + del*diag(ncol(X))), crossprod(X, y)))
+  }
   # If q is bigger than 2, get starting values within unif. dist. bounds
   if (q > 2) {
     start[abs(start) > sqrt(3)*tau.sq] <- sign(start[abs(start) > sqrt(3)*tau.sq])*sqrt(3)*tau.sq
