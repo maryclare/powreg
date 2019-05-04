@@ -95,14 +95,14 @@ nrq <- function(kurt, sval = 0.032, tol = 10^(-12)) { # This starting value is t
   kurt <- ifelse(kurt <= 1.801, 1.801, kurt)
   # Kurtosis greater than 1.8 gives a q value of 1086.091
   # Value of fpq at q = 1086.091 is about -10^(-8), so the curve *is* pretty flat at this point
-  if (kurt < 6) {
+  if (kurt < 6 & kurt >= 3) {
     sval <- 1
   } else if (kurt < 3) {
     sval <- 2
   }
   x.old <- Inf
   x.new <- sval
-  while (abs(x.new - x.old) > tol) {
+  while (abs(log(x.new/x.old)) > tol) {
     x.old <- x.new
     x.new <- x.old - fq(x.old, kurt)/fpq(x.old)
   }
