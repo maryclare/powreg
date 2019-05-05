@@ -244,7 +244,7 @@ obj.ddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
 #' @param \code{X} regression design matrix
 #' @return Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat}
 #' @export
-varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
+varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   
   # Some code for simulations
   # n <- 5
@@ -272,14 +272,13 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
       break
     }
   }
-  
-  r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = 10000))
+  r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = grid.num))
   obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   dderiv <- obj.ddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   
   sc <- sign(dderiv[-1]) == sign(dderiv[-length(dderiv)])
   if (max(which(obj == max(obj))) == length(obj)) {
-    r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = 1000))
+    r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = grid.num))
     obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   }
   # r.sq <- exp(seq(log(min.r.sq), log(r.sq[(max(which(deriv <= 0.009)))]), length.out = 1000))
@@ -351,7 +350,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
 #' @export
 estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE,
                       diff.tol = 10^(-12), min.sig.sq = 10^(-14), 
-                      min.r.sq = 10^(-14)) {
+                      min.r.sq = 10^(-14), grid.num = 50000) {
   
   
   p <- ncol(X)
@@ -395,7 +394,7 @@ estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom
     
   } else {
     vpars <- varcomp(y = y, X = X, diff.tol = diff.tol,
-                     min.sig.sq = min.sig.sq, min.r.sq = min.r.sq) # rrmmle(y = y, X = X)
+                     min.sig.sq = min.sig.sq, min.r.sq = min.r.sq, grid.num = grid.num) # rrmmle(y = y, X = X)
     sigma.beta.sq.hat <- vpars[1]
     sigma.epsi.sq.hat <- vpars[2]
     # sigma.beta.sq.hat <- vpars[2]
