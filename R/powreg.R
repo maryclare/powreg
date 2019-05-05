@@ -171,6 +171,28 @@ obj.r.sq.ddlr <- function(r.sq, y.tilde, d) {
   .e1 <- d^2; .e2 <- exp(lr.sq); .e3 <- .e1 * .e2; .e4 <- 1 + .e3; .e5 <- y.tilde^2; .e6 <- .e4^2; .e7 <- .e3/.e4; .e8 <- .e1 * .e5; .e9 <- sum(.e5/.e4); -((n * (sum(-(.e8 * (1 - 2 * .e7) * .e2/.e6)) - sum(-(.e8 * .e2/.e6))^2/.e9)/.e9 +      sum(.e1 * (1 - .e7) * .e2/.e4))/n)
 }
 
+obj.r.sq.dddlr <- function(r.sq, y.tilde, d) {
+  n <- length(y.tilde)
+  lr.sq <- log(r.sq)
+  # Deriv(Deriv(Deriv("(-n*log(sum(y.tilde^2/(1 + exp(lr.sq)*d^2))) - sum(log(1 + exp(lr.sq)*d^2)) + n*log(n)  - n)/n", "lr.sq"), "lr.sq"), "lr.sq")
+  .e1 <- d^2; .e2 <- exp(lr.sq); .e3 <- .e1 * .e2; .e4 <- 1 + .e3; .e5 <- y.tilde^2; 
+  .e6 <- .e3/.e4; .e7 <- .e4^2; .e8 <- .e1 * .e5; .e9 <- 1 - 2 * .e6; .e10 <- sum(.e5/.e4); 
+  .e12 <- 1 - .e6; .e13 <- sum(-(.e8 * .e2/.e7)); 
+  -((n * (sum(-(.e8 * (1 - .e1 * (2 + 2 * .e9 + 2 * .e12) * .e2/.e4) *      .e2/.e7)) - (3 * sum(-(.e8 * .e9 * .e2/.e7)) - 2 * (.e13^2/.e10)) *      .e13/.e10)/.e10 + sum(.e1 * .e9 * .e12 * .e2/.e4))/n)
+}
+
+obj.r.sq.ddddlr <- function(r.sq, y.tilde, d) {
+  n <- length(y.tilde)
+  lr.sq <- log(r.sq)
+  .e1 <- d^2; .e2 <- exp(lr.sq); .e3 <- .e1 * .e2; 
+  .e4 <- 1 + .e3; .e5 <- .e3/.e4; .e6 <- y.tilde^2; 
+  .e7 <- .e4^2; .e8 <- .e1 * .e6; .e9 <- 2 * .e5; .e10 <- 1 - .e9; 
+  .e11 <- 1 - .e5; .e12 <- sum(.e6/.e4); .e14 <- sum(-(.e8 * .e2/.e7)); 
+  .e16 <- sum(-(.e8 * .e10 * .e2/.e7)); .e18 <- 2 * .e11; .e19 <- 2 + 2 * .e10; 
+  .e21 <- .e14^2/.e12; .e22 <- 1 - .e1 * (.e19 + .e18) * .e2/.e4; 
+  -((n * (sum(-(.e8 * (1 - .e1 * (2 * .e22 + 4 + 4 * .e10 + 4 *      .e11 - .e1 * (.e19 + 8 * .e11) * .e2/.e4) * .e2/.e4) * .e2/.e7)) -      ((3 * .e16 - 2 * .e21) * .e16 + (4 * sum(-(.e8 * .e22 * .e2/.e7)) -          (2 * (2 * .e16 - .e21) + 6 * .e16 - 4 * .e21) * .e14/.e12) *          .e14)/.e12)/.e12 + sum(.e1 * (.e10 * .e11 - .e1 * (1 +      .e18 - .e9) * .e2/.e4) * .e11 * .e2/.e4))/n)
+}
+
 #' Function for computing the profile likelihood of the variance ratio under normal-normal model
 #'
 #' \code{varcomp}
@@ -236,6 +258,45 @@ obj.ddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
   return(obj)
 }
 
+obj.dddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
+  
+  if (is.null(y.tilde) & is.null(d)) {
+    n <- nrow(X); p <- ncol(X)
+    svd <- svd(X, nu = n)
+    U <- svd$u
+    y.tilde <- crossprod(U, y)
+    d <- c(svd$d, rep(0, n - min(n, p)))
+  }
+  
+  n <- length(y.tilde)
+  obj <- numeric(length(r.sq)) 
+  
+  for (i in 1:length(r.sq)) {
+    obj[i] <- obj.r.sq.dddlr(r.sq = r.sq[i], y.tilde = y.tilde, d = d)
+  }
+  return(obj)
+}
+
+obj.ddddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
+  
+  if (is.null(y.tilde) & is.null(d)) {
+    n <- nrow(X); p <- ncol(X)
+    svd <- svd(X, nu = n)
+    U <- svd$u
+    y.tilde <- crossprod(U, y)
+    d <- c(svd$d, rep(0, n - min(n, p)))
+  }
+  
+  n <- length(y.tilde)
+  obj <- numeric(length(r.sq)) 
+  
+  for (i in 1:length(r.sq)) {
+    obj[i] <- obj.r.sq.ddddlr(r.sq = r.sq[i], y.tilde = y.tilde, d = d)
+  }
+  return(obj)
+}
+
+
 #' Function for computing maximum likelihood estimates of variance parameters under normal-normal model
 #'
 #' \code{varcomp}
@@ -274,11 +335,18 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   }
   r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = grid.num))
   obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-  dderiv <- obj.ddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   
-  sc <- sign(dderiv[-1]) == sign(dderiv[-length(dderiv)])
+  
   if (max(which(obj == max(obj))) == length(obj)) {
-    r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = grid.num))
+    dderiv <- obj.ddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
+    sc <- sign(dderiv[-1]) == sign(dderiv[-length(dderiv)])
+    if (sum(sc == FALSE) > 1) {
+      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = grid.num))
+    } else {
+      dddderiv <- obj.ddddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
+      sc <- sign(dddderiv[-1]) == sign(dddderiv[-length(dderiv)])
+      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = grid.num))
+    }
     obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   }
   # r.sq <- exp(seq(log(min.r.sq), log(r.sq[(max(which(deriv <= 0.009)))]), length.out = 1000))
