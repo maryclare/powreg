@@ -350,7 +350,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
 #' @export
 estRegPars <-function(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE, mom = TRUE,
                       diff.tol = 10^(-12), min.sig.sq = 10^(-14), 
-                      min.r.sq = 10^(-14), grid.num = 50000) {
+                      min.r.sq = 10^(-14), grid.num = 10000) {
   
   
   p <- ncol(X)
