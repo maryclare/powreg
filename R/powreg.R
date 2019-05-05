@@ -150,8 +150,25 @@ s.sq.r.sq <- function(r.sq, y.tilde = NULL, d = NULL, y = NULL, X = NULL) {
 
 obj.r.sq <- function(r.sq, y.tilde, d) {
   n <- length(y.tilde)
-  s.sq <- s.sq.r.sq(r.sq = r.sq, y.tilde = y.tilde, d = d)
-  -n*log(s.sq) - sum(log(1 + r.sq*d^2)) - sum(y.tilde^2/(1 + r.sq*d^2))/s.sq
+  # s.sq <- s.sq.r.sq(r.sq = r.sq, y.tilde = y.tilde, d = d)
+  # -n*log(s.sq) - sum(log(1 + r.sq*d^2)) - sum(y.tilde^2/(1 + r.sq*d^2))/s.sq
+  (-n*log(sum(y.tilde^2/(1 + r.sq*d^2))) - sum(log(1 + r.sq*d^2)) + n*log(n)  - n)/n
+}
+
+obj.r.sq.dlr <- function(r.sq, y.tilde, d) {
+  n <- length(y.tilde)
+  # .e1 <- d^2; .e2 <- 1 + .e1 * r.sq; .e3 <- y.tilde^2; 
+  # (-(n * sum(-(.e1 * .e3/.e2^2))/sum(.e3/.e2) + sum(.e1/.e2)))/n
+  # (-n*log(sum(y.tilde^2/(1 + exp(lr.sq)*d^2))) - sum(log(1 + exp(lr.sq)*d^2)) + n*log(n)  - n)/n
+  lr.sq <- log(r.sq)
+  .e1 <- d^2; .e2 <- exp(lr.sq); .e3 <- .e1 * .e2; .e4 <- 1 + .e3; .e5 <- y.tilde^2; -((n * sum(-(.e1 * .e5 * .e2/.e4^2))/sum(.e5/.e4) + sum(.e3/.e4))/n)
+}
+
+obj.r.sq.ddlr <- function(r.sq, y.tilde, d) {
+  n <- length(y.tilde)
+  lr.sq <- log(r.sq)
+  # Deriv(Deriv("(-n*log(sum(y.tilde^2/(1 + exp(lr.sq)*d^2))) - sum(log(1 + exp(lr.sq)*d^2)) + n*log(n)  - n)/n", "lr.sq"), "lr.sq")
+  .e1 <- d^2; .e2 <- exp(lr.sq); .e3 <- .e1 * .e2; .e4 <- 1 + .e3; .e5 <- y.tilde^2; .e6 <- .e4^2; .e7 <- .e3/.e4; .e8 <- .e1 * .e5; .e9 <- sum(.e5/.e4); -((n * (sum(-(.e8 * (1 - 2 * .e7) * .e2/.e6)) - sum(-(.e8 * .e2/.e6))^2/.e9)/.e9 +      sum(.e1 * (1 - .e7) * .e2/.e4))/n)
 }
 
 #' Function for computing the profile likelihood of the variance ratio under normal-normal model
@@ -177,6 +194,44 @@ obj.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
   
   for (i in 1:length(r.sq)) {
     obj[i] <- obj.r.sq(r.sq = r.sq[i], y.tilde = y.tilde, d = d)
+  }
+  return(obj)
+}
+
+obj.dlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
+  
+  if (is.null(y.tilde) & is.null(d)) {
+    n <- nrow(X); p <- ncol(X)
+    svd <- svd(X, nu = n)
+    U <- svd$u
+    y.tilde <- crossprod(U, y)
+    d <- c(svd$d, rep(0, n - min(n, p)))
+  }
+  
+  n <- length(y.tilde)
+  obj <- numeric(length(r.sq)) 
+  
+  for (i in 1:length(r.sq)) {
+    obj[i] <- obj.r.sq.dlr(r.sq = r.sq[i], y.tilde = y.tilde, d = d)
+  }
+  return(obj)
+}
+
+obj.ddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
+  
+  if (is.null(y.tilde) & is.null(d)) {
+    n <- nrow(X); p <- ncol(X)
+    svd <- svd(X, nu = n)
+    U <- svd$u
+    y.tilde <- crossprod(U, y)
+    d <- c(svd$d, rep(0, n - min(n, p)))
+  }
+  
+  n <- length(y.tilde)
+  obj <- numeric(length(r.sq)) 
+  
+  for (i in 1:length(r.sq)) {
+    obj[i] <- obj.r.sq.ddlr(r.sq = r.sq[i], y.tilde = y.tilde, d = d)
   }
   return(obj)
 }
@@ -218,11 +273,17 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq) {
     }
   }
   
-  r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = 100000))
+  r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = 10000))
   obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-  # Avoid boundary solutions
-  r.sq <- r.sq[1:(max(which(obj[-1] - obj[-length(obj)] <= 0)))]
-  obj <- obj[1:(max(which(obj[-1] - obj[-length(obj)] <= 0)))] 
+  dderiv <- obj.ddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
+  
+  sc <- sign(dderiv[-1]) == sign(dderiv[-length(dderiv)])
+  if (max(which(obj == max(obj))) == length(obj)) {
+    r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = 1000))
+    obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
+  }
+  # r.sq <- exp(seq(log(min.r.sq), log(r.sq[(max(which(deriv <= 0.009)))]), length.out = 1000))
+  # obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   # der <- obj[-1] - obj[-length(obj)]
   # print(range(der))
   # if (min(der) < 0 & min(der) > -10^(-14)) {
