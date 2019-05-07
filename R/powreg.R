@@ -340,12 +340,28 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   if (max(which(obj == max(obj))) == length(obj)) {
     dderiv <- obj.ddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
     sc <- sign(dderiv[-1]) == sign(dderiv[-length(dderiv)])
+    mag <- abs(dderiv[-1] - dderiv[-length(dderiv)])
     if (sum(sc == FALSE) > 1) {
-      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = grid.num))
+      if (sum(sc == FALSE) == 2) {
+        cut <- max(which(sc == FALSE))
+      } else {
+        which.sc <- which(sc == FALSE)[-1]
+        deriv.sc <- abs(obj.dlr.varcomp(r.sq[which.sc], y = y, X = X, y.tilde = y.tilde, d = d))
+        cut <- which.sc[deriv.sc == min(deriv.sc)]
+      }
+      
+      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[cut])), length.out = grid.num))
     } else {
       dddderiv <- obj.ddddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
       sc <- sign(dddderiv[-1]) == sign(dddderiv[-length(dderiv)])
-      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[max(which(sc == FALSE))])), length.out = grid.num))
+      if (sum(sc == FALSE) == 2) {
+        cut <- max(which(sc == FALSE))
+      } else {
+        which.sc <- which(sc == FALSE)[-1]
+        deriv.sc <- abs(obj.dlr.varcomp(r.sq[which.sc], y = y, X = X, y.tilde = y.tilde, d = d))
+        cut <- which.sc[deriv.sc == min(deriv.sc)]
+      }
+      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[cut])), length.out = grid.num))
     }
     obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   }
