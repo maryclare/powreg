@@ -307,26 +307,24 @@ obj.ddddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
 #' @export
 varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   
-  # Some code for simulations
-  # n <- 5
-  # p <- 10
-  # 
-  # X <- matrix(rnorm(n*p), nrow = n, ncol = p)
-  # beta <- rnorm(p)
-  # y <- X%*%beta + rnorm(n)
+  n <- length(y)
+  H <- diag(n) - rep(1, n)%*%t(rep(1, n))/n
+  e.H <- eigen(H)
+  v.X <- t(e.H$vectors[, -ncol(e.H$vectors)])%*%X
+  v.y <- t(e.H$vectors[, -ncol(e.H$vectors)])%*%y
   
   # no.noise <- FALSE
   upper.lim <- 100
   
-  svd <- svd(X, nu = nrow(X))
+  svd <- svd(v.X, nu = nrow(v.X))
   U <- svd$u
-  y.tilde <- crossprod(U, y)
-  d <- c(svd$d, rep(0, nrow(X) - min(dim(X))))
+  y.tilde <- crossprod(U, v.y)
+  d <- c(svd$d, rep(0, nrow(v.X) - min(dim(v.X))))
   
-  s.sq.r.sq.val <- s.sq.r.sq(upper.lim, y = y, X = X, y.tilde = y.tilde, d = d)
+  s.sq.r.sq.val <- s.sq.r.sq(upper.lim, y = v.y, X = v.X, y.tilde = y.tilde, d = d)
   
   while (s.sq.r.sq.val > min.sig.sq) {
-    s.sq.r.sq.val <- s.sq.r.sq(upper.lim*1.1, y = y, X = X, y.tilde = y.tilde, d = d)
+    s.sq.r.sq.val <- s.sq.r.sq(upper.lim*1.1, y = v.y, X = v.X, y.tilde = y.tilde, d = d)
     if (!is.nan(s.sq.r.sq.val)) {
       upper.lim <- upper.lim*1.1
     } else {
@@ -334,50 +332,8 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
     }
   }
   r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = grid.num))
-  obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
+  obj <- obj.varcomp(r.sq, y = v.y, X = v.X, y.tilde = y.tilde, d = d)
   
-  
-  if (max(which(obj == max(obj))) == length(obj)) {
-    dderiv <- obj.ddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-    sc <- sign(dderiv[-1]) == sign(dderiv[-length(dderiv)])
-    mag <- abs(dderiv[-1] - dderiv[-length(dderiv)])
-    if (sum(sc == FALSE) > 1) {
-      if (sum(sc == FALSE) == 2) {
-        cut <- max(which(sc == FALSE))
-      } else {
-        which.sc <- which(sc == FALSE)[-1]
-        deriv.sc <- abs(obj.dlr.varcomp(r.sq[which.sc], y = y, X = X, y.tilde = y.tilde, d = d))
-        cut <- which.sc[deriv.sc == min(deriv.sc)]
-      }
-      
-      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[cut])), length.out = grid.num))
-    } else {
-      dddderiv <- obj.ddddlr.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-      sc <- sign(dddderiv[-1]) == sign(dddderiv[-length(dderiv)])
-      if (sum(sc == FALSE) == 2) {
-        cut <- max(which(sc == FALSE))
-      } else {
-        which.sc <- which(sc == FALSE)[-1]
-        deriv.sc <- abs(obj.dlr.varcomp(r.sq[which.sc], y = y, X = X, y.tilde = y.tilde, d = d))
-        cut <- which.sc[deriv.sc == min(deriv.sc)]
-      }
-      r.sq <- exp(seq(log(min.r.sq), log(max(r.sq[cut])), length.out = grid.num))
-    }
-    obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-  }
-  # r.sq <- exp(seq(log(min.r.sq), log(r.sq[(max(which(deriv <= 0.009)))]), length.out = 1000))
-  # obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
-  # der <- obj[-1] - obj[-length(obj)]
-  # print(range(der))
-  # if (min(der) < 0 & min(der) > -10^(-14)) {
-  #   no.noise <- TRUE
-  # }
-  # par(mfrow = c(1, 2))
-  # plot(r.sq[r.sq < 2], obj[r.sq < 2], type = "l")
-  # plot(r.sq, obj, type = "l")
-  # der[abs(der) < 10^(-12)] <- sign(der[abs(der) < 10^(-12)])*10^(-12)
-  # der[der == 0] <- 10^(-12)
-  # sign.changes <- which(sign(der[-1]) != sign(der[-length(der)]))
   max.obj <- which(obj == max(obj))
   if (length(max.obj) > 1) {
     obj.min <- min(max.obj)
@@ -396,7 +352,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   
   while (max.diff > diff.tol) {
     r.sq <- exp(seq(log(r.sq[obj.min]), log(r.sq[obj.max]), length.out = 100))
-    obj <- obj.varcomp(r.sq, y = y, X = X)
+    obj <- obj.varcomp(r.sq, y = v.y, X = v.X)
     max.obj <- which(obj == max(obj))
     if (length(max.obj) > 1) {
       obj.min <- min(max.obj)
@@ -412,7 +368,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   }
   
   r.sq.max <- r.sq[min(max.obj)]
-  s.sq.max <- s.sq.r.sq(r.sq.max, y = y, X = X)
+  s.sq.max <- s.sq.r.sq(r.sq.max, y = v.y, X = v.X)
   tau.sq.max <- r.sq.max*s.sq.max
   
   # print(c(s.sq.max, tau.sq.max))
