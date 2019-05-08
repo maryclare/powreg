@@ -308,23 +308,19 @@ obj.ddddlr.varcomp <- function(r.sq, y = y, X = X, y.tilde = NULL, d = NULL) {
 varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   
   n <- length(y)
-  H <- diag(n) - rep(1, n)%*%t(rep(1, n))/n
-  e.H <- eigen(H)
-  v.X <- t(e.H$vectors[, -ncol(e.H$vectors)])%*%X
-  v.y <- t(e.H$vectors[, -ncol(e.H$vectors)])%*%y
   
   # no.noise <- FALSE
   upper.lim <- 100
   
-  svd <- svd(v.X, nu = nrow(v.X))
+  svd <- svd(X, nu = nrow(X))
   U <- svd$u
-  y.tilde <- crossprod(U, v.y)
-  d <- c(svd$d, rep(0, nrow(v.X) - min(dim(v.X))))
+  y.tilde <- crossprod(U, y)
+  d <- c(svd$d, rep(0, nrow(X) - min(dim(X))))
   
-  s.sq.r.sq.val <- s.sq.r.sq(upper.lim, y = v.y, X = v.X, y.tilde = y.tilde, d = d)
+  s.sq.r.sq.val <- s.sq.r.sq(upper.lim, y = y, X = X, y.tilde = y.tilde, d = d)
   
   while (s.sq.r.sq.val > min.sig.sq) {
-    s.sq.r.sq.val <- s.sq.r.sq(upper.lim*1.1, y = v.y, X = v.X, y.tilde = y.tilde, d = d)
+    s.sq.r.sq.val <- s.sq.r.sq(upper.lim*1.1, y = y, X = X, y.tilde = y.tilde, d = d)
     if (!is.nan(s.sq.r.sq.val)) {
       upper.lim <- upper.lim*1.1
     } else {
@@ -332,7 +328,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
     }
   }
   r.sq <- exp(seq(log(min.r.sq), log(upper.lim), length.out = grid.num))
-  obj <- obj.varcomp(r.sq, y = v.y, X = v.X, y.tilde = y.tilde, d = d)
+  obj <- obj.varcomp(r.sq, y = y, X = X, y.tilde = y.tilde, d = d)
   
   max.obj <- which(obj == max(obj))
   if (length(max.obj) > 1) {
@@ -352,7 +348,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   
   while (max.diff > diff.tol) {
     r.sq <- exp(seq(log(r.sq[obj.min]), log(r.sq[obj.max]), length.out = 100))
-    obj <- obj.varcomp(r.sq, y = v.y, X = v.X)
+    obj <- obj.varcomp(r.sq, y = y, X = X)
     max.obj <- which(obj == max(obj))
     if (length(max.obj) > 1) {
       obj.min <- min(max.obj)
@@ -368,7 +364,7 @@ varcomp <- function(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num) {
   }
   
   r.sq.max <- r.sq[min(max.obj)]
-  s.sq.max <- s.sq.r.sq(r.sq.max, y = v.y, X = v.X)
+  s.sq.max <- s.sq.r.sq(r.sq.max, y = y, X = X)
   tau.sq.max <- r.sq.max*s.sq.max
   
   # print(c(s.sq.max, tau.sq.max))
