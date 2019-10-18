@@ -5,7 +5,8 @@
 \title{Function for estimating tuning parameters}
 \usage{
 estRegPars(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE,
-  mom = TRUE)
+  mom = TRUE, diff.tol = 10^(-12), min.sig.sq = 10^(-14),
+  min.r.sq = 10^(-14), grid.num = 10000)
 }
 \arguments{
 \item{\code{y}}{regression response}
@@ -13,6 +14,8 @@ estRegPars(y, X, delta.sq = NULL, precomp = NULL, comp.q = FALSE,
 \item{\code{X}}{regression design matrix}
 
 \item{\code{delta}}{ridge regression parameter for when X is not full rank}
+
+\item{\code{diff.tol}}{tolerance for variance parameter estimation, defaults to diff.tol = 10^(-7)}
 }
 \value{
 Estimates \code{sigma.beta.sq.hat}, \code{sigma.epsi.sq.hat} and \code{kappa.hat}

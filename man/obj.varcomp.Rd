@@ -4,7 +4,7 @@
 \alias{obj.varcomp}
 \title{Function for computing the profile likelihood of the variance ratio under normal-normal model}
 \usage{
-obj.varcomp(r.sq, y = y, X = X)
+obj.varcomp(r.sq, y = y, X = X, y.tilde = NULL, d = NULL)
 }
 \arguments{
 \item{\code{r.sq}}{variance ratio}

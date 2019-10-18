@@ -4,7 +4,7 @@
 \alias{varcomp}
 \title{Function for computing maximum likelihood estimates of variance parameters under normal-normal model}
 \usage{
-varcomp(y, X)
+varcomp(y, X, diff.tol, min.sig.sq, min.r.sq, grid.num)
 }
 \arguments{
 \item{\code{y}}{regression response}
